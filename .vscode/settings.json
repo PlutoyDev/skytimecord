@@ -1,4 +1,9 @@
 {
   "inlineFold.unfoldOnLineSelect": true,
-  "inlineFold.unfoldedOpacity": 0.8
+  "inlineFold.unfoldedOpacity": 0.8,
+  "emmet.includeLanguages": {
+    "javascriptreact": "html",
+    "typescriptreact": "html"
+  }
+  
 }
