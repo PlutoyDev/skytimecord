@@ -4,6 +4,7 @@
   "emmet.includeLanguages": {
     "javascriptreact": "html",
     "typescriptreact": "html"
-  }
-  
+  },
+  "editor.formatOnSave": true,
+  "files.autoSave": "onFocusChange"
 }
