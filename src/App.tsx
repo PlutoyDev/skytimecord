@@ -150,6 +150,12 @@ const App: Component = () => {
                   <Match when={selectedEvent()?.type === 'Hourly'}>
                     <HourlyEvent name={selectedEvent()?.name} />
                   </Match>
+                  <Match when={selectedEvent()?.type === 'Traveling Spirits'}>
+                    <TravelingSpiritEvent />
+                  </Match>
+                  <Match when={selectedEvent()?.type === 'Shattering Shard'}>
+                    <ShatteringShardEvent />
+                  </Match>
                 </Switch>
               </Show>
             </SettingsContext.Provider>
@@ -483,8 +489,24 @@ function HourlyEvent(props: EventAsProp) {
   );
 }
 
-      <TimestampItem time={previous()} label={`Previous ${props.name.toLowerCase()}`} />
-      <TimestampItem time={next()} label={`Next ${props.name.toLowerCase()}`} />
+function TravelingSpiritEvent() {
+  return (
+    <>
+      <GridDivider text={hint} />
+      <div class='col-span-full'>
+        <p class='text-sm font-bold'>Not implemented</p>
+      </div>
+    </>
+  );
+}
+
+function ShatteringShardEvent() {
+  return (
+    <>
+      <GridDivider text={hint} />
+      <div class='col-span-full'>
+        <p class='text-sm font-bold'>Not implemented</p>
+      </div>
     </>
   );
 }
