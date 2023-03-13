@@ -13,13 +13,8 @@ import {
   For,
   Show,
 } from 'solid-js';
-import { createStore, StoreNode, Store, SetStoreFunction } from 'solid-js/store';
-import {
-  RiSystemArrowDropDownLine,
-  RiSystemMenuFoldLine,
-  RiSystemMenuUnfoldLine,
-  RiSystemSearchLine,
-} from 'solid-icons/ri';
+import { createStore } from 'solid-js/store';
+import { RiSystemArrowDropDownLine } from 'solid-icons/ri';
 import { DateTime, Duration } from 'luxon';
 import Fuse from 'fuse.js';
 
@@ -303,6 +298,7 @@ function EventSearch(props: EventSearchProps) {
         onFocus={() => (selectedEvent() && (setQuery(''), setSelectedEvent(null)), setIsQuerying(true))}
         onBlur={() => setTimeout(() => setIsQuerying(false), 200)}
         onKeyDown={e => {
+          e.preventDefault();
           if (e.key === 'Escape') {
             setQuery('');
           } else if (e.key === 'ArrowDown' && focusedIndex() !== results().length - 1) {
