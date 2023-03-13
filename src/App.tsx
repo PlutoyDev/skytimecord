@@ -354,7 +354,7 @@ function toTitleCase(str: string) {
 }
 
 const hint =
-  'Hover over the following box to reveal the timestamp code\nClick on the following box to copy the timestamp to your clipboard.';
+  'Hover over the following box to reveal the timestamp code\nClick on it to copy the timestamp to your clipboard.';
 interface EventAsProp {
   name: string;
 }
@@ -494,7 +494,7 @@ function TravelingSpiritEvent() {
     <>
       <GridDivider text={hint} />
       <div class='col-span-full'>
-        <p class='text-sm font-bold'>Not implemented</p>
+        <p class='block text-center text-5xl text-red-600'>Not implemented</p>
       </div>
     </>
   );
@@ -505,7 +505,7 @@ function ShatteringShardEvent() {
     <>
       <GridDivider text={hint} />
       <div class='col-span-full'>
-        <p class='text-sm font-bold'>Not implemented</p>
+        <p class='block text-center text-5xl text-red-600'>Not implemented</p>
       </div>
     </>
   );
