@@ -217,7 +217,7 @@ function Dropdown(props: DropdownProps) {
       </div>
 
       <Show when={isOpen()}>
-        <div class='absolute mt-1 w-full rounded-md bg-zinc-800 shadow-lg'>
+        <div class='absolute mt-1 w-full rounded-md bg-zinc-800 shadow-lg z-10'>
           <ul
             tabindex='-1'
             role='listbox'
@@ -338,7 +338,7 @@ function GridDivider(props: { text?: string; divClass?: string; lineClass?: stri
   return (
     <div class={`col-span-full ${props.divClass ?? 'my-1'}`}>
       <hr class={`border-t-zinc-700 ${props.lineClass}`} />
-      <p class={`text-center text-gray-500 ${props.textClass}`}>{props.text}</p>
+      <p class={`text-center text-gray-500 whitespace-pre-line ${props.textClass}`}>{props.text}</p>
     </div>
   );
 }
@@ -481,13 +481,40 @@ function HourlyEvent(props: EventAsProp) {
   );
 }
 
+const tsPivot = {
+  date: DateTime.local(2022, 1, 10, { zone: APP_TIMEZONE }),
+  count: 52,
+};
+
 function TravelingSpiritEvent() {
+  const now = useNow();
+  const nextTsEnd = () => {
+    const nextMon = now.plus({ weeks: 1 }).startOf('week');
+    return Math.floor(nextMon.diff(now, 'weeks').weeks) % 2 ? nextMon.plus({ weeks: 1 }) : nextMon;
+  };
+  const nextTsStart = () => nextTsEnd().minus({ days: 4 });
+  const nextTsCount = () => Math.ceil(nextTsStart().diff(tsPivot.date, 'weeks').weeks / 2) + tsPivot.count;
+
+  const prevTsEnd = () => nextTsEnd().minus({ weeks: 2 });
+  const prevTsStart = () => nextTsStart().minus({ weeks: 2 });
+  const prevTsCount = () => nextTsCount() - 1;
+
   return (
     <>
       <GridDivider text={hint} />
-      <div class='col-span-full'>
-        <p class='block text-center text-5xl text-red-600'>Not implemented</p>
-      </div>
+      <ItemTimestamp
+        time={nextTsStart()}
+        label='Next Traveling Spirit start'
+        description={`Traveling Spirit ${nextTsCount()}`}
+      />
+      <ItemTimestamp time={nextTsEnd()} label='Next Traveling Spirit ends' />
+      <GridDivider />
+      <ItemTimestamp
+        time={prevTsStart()}
+        label='Previous Traveling Spirit start'
+        description={`Traveling Spirit ${prevTsCount()}`}
+      />
+      <ItemTimestamp time={prevTsEnd()} label='Previous Traveling Spirit ends' />
     </>
   );
 }
@@ -565,7 +592,7 @@ function CopyableTimestampBox(props: { time: DateTime }) {
       onMouseLeave={() => (setCopied(false), setShowRaw(false))}
       onClick={copyToClipboard}
     >
-      <span class='text-2xl font-bold text-white'>
+      <span class='text-2xl font-bold text-white whitespace-pre-wrap'>
         {copied() ? 'Copied!' : showRaw() ? formattedTime().code : formattedTime().str}
       </span>
     </div>
