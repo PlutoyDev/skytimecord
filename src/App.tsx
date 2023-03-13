@@ -104,10 +104,6 @@ const App: Component = () => {
     }
   };
 
-  createEffect(() => {
-    console.log(settings.timestampFormat);
-  });
-
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown);
   });
@@ -271,7 +267,6 @@ function EventSearch(props: EventSearchProps) {
   const [selectedEvent, setSelectedEvent] = createSignal<HardcodedEvent | null>(null);
 
   const onSelectEvent = (event: HardcodedEvent) => {
-    console.log(event.name);
     setSelectedEvent(event);
     setQuery(event.name);
     setIsQuerying(false);
@@ -424,8 +419,6 @@ function HourlyEvent(props: EventAsProp) {
     const seconds = 60 - now.second;
     const minuteOffset = (offset?.rescale().minutes ?? 0) - now.minute - (seconds > 0 ? 1 : 0);
     const hourOffset = now.hour % period.rescale().hours;
-
-    console.log({ now, period, offset, seconds, minuteOffset, hourOffset });
 
     return now.plus({
       hours: hourOffset === 0 && minuteOffset > 0 ? 0 : period.rescale().hours - hourOffset,
