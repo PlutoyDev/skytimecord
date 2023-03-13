@@ -17,6 +17,7 @@ import { createStore } from 'solid-js/store';
 import { RiSystemArrowDropDownLine } from 'solid-icons/ri';
 import { DateTime, Duration } from 'luxon';
 import Fuse from 'fuse.js';
+import { hourlyEventParameters } from './data/HourlyEventParam';
 
 const APP_TIMEZONE = 'America/Los_Angeles';
 
@@ -343,10 +344,6 @@ function GridDivider(props: { text?: string; divClass?: string; lineClass?: stri
   );
 }
 
-function toTitleCase(str: string) {
-  return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-}
-
 const hint =
   'Hover over the following box to reveal the timestamp code\nClick on it to copy the timestamp to your clipboard.';
 interface EventAsProp {
@@ -366,50 +363,6 @@ function OneTimeEvent(props: EventAsProp) {
     </>
   );
 }
-
-interface HourlyEventParameter {
-  period: Duration;
-  offset?: Duration;
-  fullDuration: Duration;
-  preActiveDuration?: Duration;
-  postActiveDuration?: Duration;
-
-  startedDescription?: string;
-  activeDescription?: string;
-}
-
-const hourlyEventParameters: Record<string, HourlyEventParameter> = {
-  'Sanctuary Geyser': {
-    period: Duration.fromObject({ hours: 2 }),
-    offset: Duration.fromObject({ minutes: 0 }),
-    preActiveDuration: Duration.fromObject({ minutes: 5 }),
-    fullDuration: Duration.fromObject({ minutes: 15 }),
-    startedDescription: 'Geyser is about to erupt',
-    activeDescription: 'Geyser is erupting',
-  },
-  'Forest Grandma Dinner': {
-    period: Duration.fromObject({ hours: 2 }),
-    offset: Duration.fromObject({ minutes: 30 }),
-    preActiveDuration: Duration.fromObject({ minutes: 5 }),
-    fullDuration: Duration.fromObject({ minutes: 15 }),
-    startedDescription: 'Grandma is cooking',
-    activeDescription: 'Food is ready',
-  },
-  'Sanctuary Turtle': {
-    period: Duration.fromObject({ hours: 2 }),
-    offset: Duration.fromObject({ minutes: 50 }),
-    fullDuration: Duration.fromObject({ minutes: 10 }),
-    startedDescription: 'Turtle is about to come out',
-    activeDescription: 'Turtle is out!!Help to burn the dark plants',
-  },
-  'Aurora Concert': {
-    period: Duration.fromObject({ hours: 4 }),
-    preActiveDuration: Duration.fromObject({ minutes: 10 }),
-    fullDuration: Duration.fromObject({ minutes: 60 }),
-    startedDescription: 'Concert is about to start! Grab a seat!',
-    activeDescription: 'Concert is in progress! Enjoy!',
-  },
-};
 
 function HourlyEvent(props: EventAsProp) {
   const eventParemter = () => hourlyEventParameters[props.name];
