@@ -1,5 +1,19 @@
-import { Component, createContext, Match, onCleanup, ParentProps, Ref, Switch, useContext } from 'solid-js';
-import { createSignal, createEffect, createMemo, onMount, For, Show } from 'solid-js';
+import {
+  Component,
+  createContext,
+  Match,
+  onCleanup,
+  ParentProps,
+  Switch,
+  useContext,
+  createSignal,
+  createEffect,
+  createMemo,
+  onMount,
+  For,
+  Show,
+} from 'solid-js';
+import { createStore, StoreNode, Store, SetStoreFunction } from 'solid-js/store';
 import {
   RiSystemArrowDropDownLine,
   RiSystemMenuFoldLine,
@@ -19,8 +33,8 @@ interface Settings {
 const NowContext = createContext<DateTime>(DateTime.local({ zone: APP_TIMEZONE }));
 const SettingsContext = createContext<Settings>();
 
-const useNow = useContext(NowContext);
-const useSettings = useContext(SettingsContext);
+const useNow = () => useContext(NowContext);
+const useSettings = () => useContext(SettingsContext);
 
 interface HardcodedEvent {
   type: string;
@@ -80,12 +94,11 @@ const timestampFormatOption: DropdownOption[] = [
 ];
 
 const App: Component = () => {
-  // Timestamp Format States
-  const [timestampFormat, setTimestampFormat] = createSignal('%R');
+  const [settings, setSettings] = createStore({ timestampFormat: '%R' } as Settings);
 
   // Query States
   let searchInput: HTMLInputElement;
-  const [selectedEvent, setSelectedEvent] = createSignal<HardcodedEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = createSignal<HardcodedEvent | null>(hardcodedEvents[0]);
 
   // Keyboard Shortcuts
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -95,6 +108,10 @@ const App: Component = () => {
       searchInput?.focus();
     }
   };
+
+  createEffect(() => {
+    console.log(settings.timestampFormat);
+  });
 
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -114,17 +131,21 @@ const App: Component = () => {
           <form class='grid gap-3 auto-rows-max grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4'>
             <div>
               <h1 class='w-full text-slate-400 mb-2 text-xl'>Timestamp format</h1>
-              <Dropdown options={timestampFormatOption} onSelect={setTimestampFormat} selected={timestampFormat()} />
+              <Dropdown
+                options={timestampFormatOption}
+                onSelect={v => setSettings({ ...settings, timestampFormat: v })}
+                selected={settings.timestampFormat}
+              />
             </div>
             <div>
               <h1 class='w-full text-slate-400 mb-2 text-xl'> Event Name</h1>
               <EventSearch ref={searchInput} onSelectEvent={setSelectedEvent} />
             </div>
-            <SettingsContext.Provider value={{ timestampFormat: timestampFormat() }}>
-              <Show when={selectedEvent()} fallback={<p>No event selected</p>}>
-                <Switch fallback={<p>Error: Unknown Event</p>}>
+            <SettingsContext.Provider value={settings}>
+              <Show when={selectedEvent()} fallback={<GridDivider text='No event selected' />}>
+                <Switch fallback={<GridDivider text='Error: Unknown event' />}>
                   <Match when={selectedEvent()?.type === 'One Time'}>
-                    {/* <OneTimeEvent name={selectedEvent()?.name} /> */}
+                    <OneTimeEvent name={selectedEvent()?.name} />
                   </Match>
                 </Switch>
               </Show>
@@ -232,7 +253,7 @@ function Dropdown(props: DropdownProps) {
 }
 
 interface EventSearchProps {
-  onSelectEvent: (event: Event) => void;
+  onSelectEvent: (event: HardcodedEvent) => void;
   ref?: HTMLInputElement;
 }
 
@@ -245,11 +266,13 @@ function EventSearch(props: EventSearchProps) {
   const [focusedIndex, setFocusedIndex] = createSignal(0);
   const [selectedEvent, setSelectedEvent] = createSignal<HardcodedEvent | null>(null);
 
-  const onSelectEvent = (event: (typeof hardcodedEvents)[0]) => {
+  const onSelectEvent = (event: HardcodedEvent) => {
+    console.log(event.name);
     setSelectedEvent(event);
     setQuery(event.name);
     setIsQuerying(false);
     setFocusedIndex(0);
+    props.onSelectEvent(event);
   };
 
   const results = () =>
@@ -269,7 +292,7 @@ function EventSearch(props: EventSearchProps) {
         value={query()}
         onInput={e => setQuery(e.currentTarget.value)}
         onFocus={() => (selectedEvent() && (setQuery(''), setSelectedEvent(null)), setIsQuerying(true))}
-        onBlur={() => setTimeout(() => setIsQuerying(false), 150)}
+        onBlur={() => setTimeout(() => setIsQuerying(false), 200)}
         onKeyDown={e => {
           if (e.key === 'Escape') {
             setQuery('');
@@ -308,19 +331,108 @@ function EventSearch(props: EventSearchProps) {
   );
 }
 
-function GridDivider(props: { text?: string }) {
+function GridDivider(props: { text?: string; divClass?: string; lineClass?: string; textClass?: string }) {
   return (
-    <div class='col-span-full'>
-      <hr class='border-t-zinc-700' />
-      <p class='text-center text-gray-500'>{props.text}</p>
+    <div class={`col-span-full ${props.divClass ?? 'my-1'}`}>
+      <hr class={`border-t-zinc-700 ${props.lineClass}`} />
+      <p class={`text-center text-gray-500 ${props.textClass}`}>{props.text}</p>
     </div>
   );
 }
 
-interface OneTimeEventProps {
+const hint =
+  'Hover over the following box to reveal the timestamp code\nClick on the following box to copy the timestamp to your clipboard.';
+interface EventAsProp {
   name: string;
 }
 
-function OneTimeEvent(props: OneTimeEventProps) {}
+function OneTimeEvent(props: EventAsProp) {
+  const previous = () => (props.name === 'Eden Reset' ? useNow().startOf('week') : useNow().startOf('day'));
+  const next = () =>
+    (props.name === 'Eden Reset' ? useNow().endOf('week') : useNow().endOf('day')).plus({ seconds: 1 });
+
+  return (
+    <>
+      <GridDivider text={hint} />
+      <TimestampItem time={previous()} label={`Previous ${props.name.toLowerCase()}`} />
+      <TimestampItem time={next()} label={`Next ${props.name.toLowerCase()}`} />
+    </>
+  );
+}
+function HourlyEvent(props: EventAsProp) {}
+function TravelingSpirit(props: EventAsProp) {}
+function ShatteringShard(props: EventAsProp) {}
+
+interface TimestampItemProps {
+  time: DateTime;
+  label: string;
+  description?: string;
+}
+
+function TimestampItem(props: TimestampItemProps) {
+  return (
+    <div class='border border-zinc-600 rounded-lg px-4 py-2 '>
+      <p class='text-sm font-bold'>{props.label}</p>
+      <Show when={props.description}>
+        <p class='text-xs text-gray-500'>{props.description}</p>
+      </Show>
+      <div class='mt-1 ml-2 w-full'>
+        <CopyableTimestampBox time={props.time} />
+      </div>
+    </div>
+  );
+}
+
+function CopyableTimestampBox(props: { time: DateTime }) {
+  const [showRaw, setShowRaw] = createSignal(false);
+  const [copied, setCopied] = createSignal(false);
+  const formattedTime = () => timestampFormater(props.time, useSettings().timestampFormat);
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(formattedTime().code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1000);
+  };
+
+  return (
+    <div
+      class='w-full p-2 rounded-lg bg-zinc-900 cursor-pointer'
+      onMouseEnter={() => setShowRaw(true)}
+      onMouseLeave={() => (setCopied(false), setShowRaw(false))}
+      onClick={copyToClipboard}
+    >
+      <span class='text-2xl font-bold text-white'>
+        {copied() ? 'Copied!' : showRaw() ? formattedTime().code : formattedTime().str}
+      </span>
+    </div>
+  );
+}
+
+/*
+t	16:20	Short Time
+T	16:20:30	Long Time
+d	20/04/2021	Short Date
+D	20 April 2021	Long Date
+f *	20 April 2021 16:20	Short Date/Time
+F	Tuesday, 20 April 2021 16:20	Long Date/Time
+R	2 months ago	Relative Time
+
+*/
+
+const discordTimeTokenToLuxonToken = {
+  t: 'HH:mm',
+  T: 'HH:mm:ss',
+  d: 'dd/MM/yyyy',
+  D: 'dd MMMM yyyy',
+  f: 'dd MMMM yyyy HH:mm',
+  F: 'cccc, dd MMMM yyyy HH:mm',
+};
+
+function timestampFormater(time: DateTime, format: string) {
+  const code = format.replaceAll(/%([tTdDfFR])/g, (_, p1) => `<t:${time.toUnixInteger()}:${p1}>`);
+  const str = format.replaceAll(/%([tTdDfFR])/g, (_, p1) =>
+    p1 !== 'R' ? time.toFormat(discordTimeTokenToLuxonToken[p1]) : time.toRelative(),
+  );
+  return { code, str };
+}
 
 export default App;
