@@ -119,7 +119,7 @@ const App: Component = () => {
   return (
     <div class='absolute overflow-hidden inset-0 p-0.5 flex flex-col '>
       <header class='flex justify-center flex-row p-3 bg-purple-500 rounded-md'>
-        <h1 class='text-2xl font-extrabold'>Sky Timestamp for Disord</h1>
+        <h1 class='text-2xl font-extrabold'>Sky Timestamp for Discord</h1>
       </header>
       <div class='flex-grow h-full container mx-auto mt-2 p-1 flex flex-col overflow-auto text-slate-400'>
         <NowProvider>
