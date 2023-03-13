@@ -20,7 +20,7 @@ import {
   RiSystemMenuUnfoldLine,
   RiSystemSearchLine,
 } from 'solid-icons/ri';
-import { DateTime } from 'luxon';
+import { DateTime, Duration } from 'luxon';
 import Fuse from 'fuse.js';
 
 const APP_TIMEZONE = 'America/Los_Angeles';
@@ -98,7 +98,7 @@ const App: Component = () => {
 
   // Query States
   let searchInput: HTMLInputElement;
-  const [selectedEvent, setSelectedEvent] = createSignal<HardcodedEvent | null>(hardcodedEvents[0]);
+  const [selectedEvent, setSelectedEvent] = createSignal<HardcodedEvent | null>(hardcodedEvents[2]);
 
   // Keyboard Shortcuts
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -146,6 +146,9 @@ const App: Component = () => {
                 <Switch fallback={<GridDivider text='Error: Unknown event' />}>
                   <Match when={selectedEvent()?.type === 'One Time'}>
                     <OneTimeEvent name={selectedEvent()?.name} />
+                  </Match>
+                  <Match when={selectedEvent()?.type === 'Hourly'}>
+                    <HourlyEvent name={selectedEvent()?.name} />
                   </Match>
                 </Switch>
               </Show>
@@ -340,6 +343,10 @@ function GridDivider(props: { text?: string; divClass?: string; lineClass?: stri
   );
 }
 
+function toTitleCase(str: string) {
+  return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+}
+
 const hint =
   'Hover over the following box to reveal the timestamp code\nClick on the following box to copy the timestamp to your clipboard.';
 interface EventAsProp {
@@ -354,26 +361,169 @@ function OneTimeEvent(props: EventAsProp) {
   return (
     <>
       <GridDivider text={hint} />
+      <ItemTimestamp time={previous()} label={`Previous ${props.name}`} />
+      <ItemTimestamp time={next()} label={`Next ${props.name}`} />
+    </>
+  );
+}
+
+interface HourlyEventParameter {
+  period: Duration;
+  offset?: Duration;
+  fullDuration: Duration;
+  preActiveDuration?: Duration;
+  postActiveDuration?: Duration;
+
+  startedDescription?: string;
+  activeDescription?: string;
+}
+
+const hourlyEventParameters: Record<string, HourlyEventParameter> = {
+  'Sanctuary Geyser': {
+    period: Duration.fromObject({ hours: 2 }),
+    offset: Duration.fromObject({ minutes: 0 }),
+    preActiveDuration: Duration.fromObject({ minutes: 5 }),
+    fullDuration: Duration.fromObject({ minutes: 15 }),
+    startedDescription: 'Geyser is about to erupt',
+    activeDescription: 'Geyser is erupting',
+  },
+  'Forest Grandma Dinner': {
+    period: Duration.fromObject({ hours: 2 }),
+    offset: Duration.fromObject({ minutes: 30 }),
+    preActiveDuration: Duration.fromObject({ minutes: 5 }),
+    fullDuration: Duration.fromObject({ minutes: 15 }),
+    startedDescription: 'Grandma is cooking',
+    activeDescription: 'Food is ready',
+  },
+  'Sanctuary Turtle': {
+    period: Duration.fromObject({ hours: 2 }),
+    offset: Duration.fromObject({ minutes: 50 }),
+    fullDuration: Duration.fromObject({ minutes: 10 }),
+    startedDescription: 'Turtle is about to come out',
+    activeDescription: 'Turtle is out!!Help to burn the dark plants',
+  },
+  'Aurora Concert': {
+    period: Duration.fromObject({ hours: 4 }),
+    preActiveDuration: Duration.fromObject({ minutes: 10 }),
+    fullDuration: Duration.fromObject({ minutes: 60 }),
+    startedDescription: 'Concert is about to start! Grab a seat!',
+    activeDescription: 'Concert is in progress! Enjoy!',
+  },
+};
+
+function HourlyEvent(props: EventAsProp) {
+  const eventParemter = () => hourlyEventParameters[props.name];
+  const nextStart = () => {
+    const now = useNow();
+    const { period, offset } = eventParemter();
+    const seconds = 60 - now.second;
+    const minuteOffset = (offset?.rescale().minutes ?? 0) - now.minute - (seconds > 0 ? 1 : 0);
+    const hourOffset = now.hour % period.rescale().hours;
+
+    console.log({ now, period, offset, seconds, minuteOffset, hourOffset });
+
+    return now.plus({
+      hours: hourOffset === 0 && minuteOffset > 0 ? 0 : period.rescale().hours - hourOffset,
+      minutes: minuteOffset,
+      seconds,
+    });
+  };
+  const nextEnd = () => nextStart().plus(eventParemter().fullDuration);
+  const nextActiveStart = () =>
+    eventParemter().preActiveDuration && nextStart().plus(eventParemter().preActiveDuration);
+  const nextActiveEnd = () => eventParemter().postActiveDuration && nextEnd().minus(eventParemter().postActiveDuration);
+
+  const prevStart = () => nextStart().minus(eventParemter().period);
+  const prevEnd = () => nextEnd().minus(eventParemter().period);
+
+  const todayStarts = () => {
+    const now = useNow();
+    const { period, offset } = eventParemter();
+    const qty = now.hour / period.rescale().hours;
+    const first = now.startOf('day').plus({ hours: offset?.rescale().hours ?? 0 });
+    return Array.from({ length: qty }, (_, i) => first.plus({ hours: i * period.rescale().hours }));
+  };
+
+  const todayEnds = () => todayStarts().map(start => start.plus(eventParemter().fullDuration));
+  const todayActiveStarts = () =>
+    eventParemter().preActiveDuration && todayStarts().map(start => start.plus(eventParemter().preActiveDuration));
+  const todayActiveEnds = () =>
+    eventParemter().postActiveDuration && todayEnds().map(end => end.minus(eventParemter().postActiveDuration));
+
+  // const [anyDate, setAnyDate] = createSignal();
+
+  // const anyDateStarts = () => todayStarts().map(start => start.plus({ days: 1 }));
+  // const anyDateEnds = () => todayEnds().map(end => end.plus({ days: 1 }));
+  // const anyDateActiveStarts = () => todayActiveStarts()?.map(start => start.plus({ days: 1 }));
+  // const anyDateActiveEnds = () => todayActiveEnds()?.map(end => end.plus({ days: 1 }));
+
+  return (
+    <>
+      <GridDivider text={hint} />
+      <ItemTimestamp
+        time={nextStart()}
+        label={`Next ${props.name} start`}
+        description={eventParemter().startedDescription}
+      />
+      <Show when={eventParemter().preActiveDuration}>
+        <ItemTimestamp
+          time={nextActiveStart()}
+          label={`Next ${props.name} active starts`}
+          description={eventParemter().activeDescription}
+        />
+      </Show>
+      <Show when={eventParemter().postActiveDuration}>
+        <ItemTimestamp time={nextActiveEnd()} label={`Next ${props.name} active ends`} />
+      </Show>
+      <ItemTimestamp time={nextEnd()} label={`Next ${props.name} ends`} />
+      <GridDivider />
+      <ItemTimestamp time={prevStart()} label={`Previous ${props.name} start`} />
+      <ItemTimestamp time={prevEnd()} label={`Previous ${props.name} ends`} />
+    </>
+  );
+}
+
       <TimestampItem time={previous()} label={`Previous ${props.name.toLowerCase()}`} />
       <TimestampItem time={next()} label={`Next ${props.name.toLowerCase()}`} />
     </>
   );
 }
-function HourlyEvent(props: EventAsProp) {}
-function TravelingSpirit(props: EventAsProp) {}
-function ShatteringShard(props: EventAsProp) {}
 
-interface TimestampItemProps {
+interface ItemDropdownProps {
+  label: string;
+  description?: string;
+  options: DropdownOption[];
+  onSelect?: (option: DropdownOption | undefined) => void;
+}
+
+function ItemDropdown(props: ItemDropdownProps) {
+  return (
+    <div class='rounded-lg px-4 py-2 '>
+      <p class='text-sm font-bold'>{props.label}</p>
+      <Show when={props.description}>
+        <p class='text-xs text-gray-500'>{props.description}</p>
+      </Show>
+      <div class='mt-1 ml-2 w-full'>
+        <Dropdown
+          options={props.options}
+          onSelect={v => props.onSelect(props.options.find(({ value }) => v === value))}
+        />
+      </div>
+    </div>
+  );
+}
+
+interface ItemTimestampProps {
   time: DateTime;
   label: string;
   description?: string;
 }
 
-function TimestampItem(props: TimestampItemProps) {
+function ItemTimestamp(props: ItemTimestampProps) {
   return (
     <div class='border border-zinc-600 rounded-lg px-4 py-2 '>
       <p class='text-sm font-bold'>{props.label}</p>
-      <Show when={props.description}>
+      <Show when={props.description} fallback={<div class='min-h-[1rem] text-xs text-gray-500' />}>
         <p class='text-xs text-gray-500'>{props.description}</p>
       </Show>
       <div class='mt-1 ml-2 w-full'>
@@ -384,9 +534,10 @@ function TimestampItem(props: TimestampItemProps) {
 }
 
 function CopyableTimestampBox(props: { time: DateTime }) {
+  const settings = useSettings();
   const [showRaw, setShowRaw] = createSignal(false);
   const [copied, setCopied] = createSignal(false);
-  const formattedTime = () => timestampFormater(props.time, useSettings().timestampFormat);
+  const formattedTime = () => timestampFormater(props.time, settings.timestampFormat);
   const copyToClipboard = () => {
     navigator.clipboard.writeText(formattedTime().code);
     setCopied(true);
