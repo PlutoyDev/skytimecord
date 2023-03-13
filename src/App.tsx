@@ -298,14 +298,17 @@ function EventSearch(props: EventSearchProps) {
         onFocus={() => (selectedEvent() && (setQuery(''), setSelectedEvent(null)), setIsQuerying(true))}
         onBlur={() => setTimeout(() => setIsQuerying(false), 200)}
         onKeyDown={e => {
-          e.preventDefault();
           if (e.key === 'Escape') {
+            e.preventDefault();
             setQuery('');
           } else if (e.key === 'ArrowDown' && focusedIndex() !== results().length - 1) {
+            e.preventDefault();
             setFocusedIndex(focusedIndex() + 1);
           } else if (e.key === 'ArrowUp' && focusedIndex() !== 0) {
+            e.preventDefault();
             setFocusedIndex(focusedIndex() - 1);
           } else if (e.key === 'Enter') {
+            e.preventDefault();
             onSelectEvent(results()[focusedIndex()]);
           }
         }}
