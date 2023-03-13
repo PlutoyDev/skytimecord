@@ -85,12 +85,12 @@ const timestampFormatOption: DropdownOption[] = [
   { label: 'Short Date/Time', value: '%f' },
   { label: 'Long Date/Time', value: '%F' },
   { label: 'Relative Time', value: '%R' },
-  { label: 'Short Time (Relative)', value: '%t(%R)' },
-  { label: 'Long Time (Relative)', value: '%T(%R)' },
-  { label: 'Short Date (Relative)', value: '%d(%R)' },
-  { label: 'Long Date (Relative)', value: '%D(%R)' },
-  { label: 'Short Date/Time (Relative)', value: '%f(%R)' },
-  { label: 'Long Date/Time (Relative)', value: '%F(%R)' },
+  { label: 'Short Time (Relative)', value: '%t (%R)' },
+  { label: 'Long Time (Relative)', value: '%T (%R)' },
+  { label: 'Short Date (Relative)', value: '%d (%R)' },
+  { label: 'Long Date (Relative)', value: '%D (%R)' },
+  { label: 'Short Date/Time (Relative)', value: '%f (%R)' },
+  { label: 'Long Date/Time (Relative)', value: '%F (%R)' },
 ];
 
 const App: Component = () => {
@@ -98,7 +98,7 @@ const App: Component = () => {
 
   // Query States
   let searchInput: HTMLInputElement;
-  const [selectedEvent, setSelectedEvent] = createSignal<HardcodedEvent | null>(hardcodedEvents[2]);
+  const [selectedEvent, setSelectedEvent] = createSignal<HardcodedEvent | null>(null);
 
   // Keyboard Shortcuts
   const handleKeyDown = (e: KeyboardEvent) => {
