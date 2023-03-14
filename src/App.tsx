@@ -18,6 +18,7 @@ import { RiSystemArrowDropDownLine } from 'solid-icons/ri';
 import { DateTime, Duration } from 'luxon';
 import Fuse from 'fuse.js';
 import { hourlyEventParameters } from './data/HourlyEventParam';
+import { getShardInfo, getUpcommingShardPhase, recursiveFindShardInfo } from './data/ShardEventParam';
 
 const APP_TIMEZONE = 'America/Los_Angeles';
 
@@ -473,12 +474,24 @@ function TravelingSpiritEvent() {
 }
 
 function ShatteringShardEvent() {
+  const nOrC_Info = () => recursiveFindShardInfo(useNow());
+  const nOrC_Phases = () => getUpcommingShardPhase(useNow(), nOrC_Info());
+  const nOrC_isActive = () => nOrC_Phases().start < useNow();
+
+  const n_Info = () => (nOrC_isActive() ? recursiveFindShardInfo(nOrC_Phases().end.plus({ minutes: 1 })) : nOrC_Info());
+  const n_Phases = () => getUpcommingShardPhase(nOrC_Phases().end.plus({ minutes: 1 }), n_Info());
+
   return (
     <>
       <GridDivider text={hint} />
-      <div class='col-span-full'>
-        <p class='block text-center text-5xl text-red-600'>Not implemented</p>
-      </div>
+      <Show when={nOrC_isActive()}>
+        <GridDivider text='Current Shard' />
+        <ItemTimestamp time={nOrC_Phases().start} label='Current Shattering Shard start' />
+        <ItemTimestamp time={nOrC_Phases().end} label='Current Shattering Shard ends' />
+      </Show>
+      <GridDivider text='Next Shard' />
+      <ItemTimestamp time={n_Phases().start} label='Next Shattering Shard start' />
+      <ItemTimestamp time={n_Phases().end} label='Next Shattering Shard ends' />
     </>
   );
 }
