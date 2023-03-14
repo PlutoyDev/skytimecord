@@ -487,10 +487,12 @@ function ShatteringShardEvent() {
       <Show when={nOrC_isActive()}>
         <GridDivider text='Current Shard' />
         <ItemTimestamp time={nOrC_Phases().start} label='Current Shattering Shard start' />
+        <ItemTimestamp time={nOrC_Phases().land} label='Current Shattering Shard land' />
         <ItemTimestamp time={nOrC_Phases().end} label='Current Shattering Shard ends' />
       </Show>
       <GridDivider text='Next Shard' />
       <ItemTimestamp time={n_Phases().start} label='Next Shattering Shard start' />
+      <ItemTimestamp time={n_Phases().land} label='Next Shattering Shard land' />
       <ItemTimestamp time={n_Phases().end} label='Next Shattering Shard ends' />
     </>
   );
