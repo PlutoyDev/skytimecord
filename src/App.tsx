@@ -204,7 +204,6 @@ function Dropdown(props: DropdownProps) {
           aria-expanded='true'
           aria-labelledby='listbox-label'
           onClick={toggleOpen}
-          onBlur={() => setTimeout(() => setIsOpen(false), 150)}
         >
           <span class='flex items-center'>
             <span class='ml-3 block truncate'>
@@ -292,7 +291,6 @@ function EventSearch(props: EventSearchProps) {
         value={query()}
         onInput={e => setQuery(e.currentTarget.value)}
         onFocus={() => (selectedEvent() && (setQuery(''), setSelectedEvent(null)), setIsQuerying(true))}
-        onBlur={() => setTimeout(() => setIsQuerying(false), 200)}
         onKeyDown={e => {
           if (e.key === 'Escape') {
             e.preventDefault();
@@ -351,9 +349,11 @@ interface EventAsProp {
 }
 
 function OneTimeEvent(props: EventAsProp) {
-  const previous = () => (props.name === 'Eden Reset' ? useNow().startOf('week') : useNow().startOf('day'));
-  const next = () =>
-    (props.name === 'Eden Reset' ? useNow().endOf('week') : useNow().endOf('day')).plus({ seconds: 1 });
+  const previous = () => {
+    const now = useNow();
+    return props.name === 'Eden Reset' ? now.startOf('day').minus({ days: now.weekday }) : now.startOf('day');
+  };
+  const next = () => previous().plus(props.name === 'Eden Reset' ? { days: 7 } : { days: 1 });
 
   return (
     <>
